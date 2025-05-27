@@ -30,15 +30,15 @@
 
 2. **Paste the YouTube video URL** in the input box.
 
-   ![Video URL Input](Assets/image01.png.png)
+   ![Video URL Input](Assets/url.png)
 
 3. **Click on "Fetch Formats"** to list the available video/audio formats.
 
-   ![Fetch Formats Button](Assets/image02.png.png)
+   ![Fetch Formats Button](Assets/fetch.png)
 
 4. **Choose the desired format**, then click on **Download Video**.
 
-   ![Download Video UI](Assets/image03.png.png)
+   ![Download Video UI](Assets/download.png)
 
 ---
 
