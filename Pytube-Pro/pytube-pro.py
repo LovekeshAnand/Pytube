@@ -56,6 +56,7 @@ def OS_platform_verify():
                 try:
                     cmd.run(["cmd", "/c", "pip3", "install", module_name, "--quiet"])
                     print(f"{module_name} installed successfully.\n")
+                    
                 except cmd.CalledProcessError:
                     print(f"Failed to install {module_name}.\n")
 
