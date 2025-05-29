@@ -1,6 +1,6 @@
-# 🎞️ Pytube Pro
+# 🎞️ TUBIT
 
-**Pytube Pro** is a Python-based desktop tool to automatically download YouTube videos with the best available formats in real-time using `yt-dlp` and `ffmpeg`.
+**Tubit** is a Python-based desktop tool to automatically download YouTube videos with the best available formats in real-time using `yt-dlp` and `ffmpeg`.
 
 ---
 
