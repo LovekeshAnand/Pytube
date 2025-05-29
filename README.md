@@ -58,7 +58,7 @@
 
 To use `ffmpeg`, download the latest stable release from the official website:
 
-➡️ [FFmpeg : ](https://ffmpeg.org/releases/ffmpeg-7.1.1.tar.xz)
+➡️FFmpeg : https://ffmpeg.org/releases/ffmpeg-7.1.1.tar.xz
 
 > After downloading, extract the archive and add rename it to `ffmpeg` so that it can be used from the terminal.
 ⚠️ `ffmpeg` file should be in the same directory as `pytube-pro.py`.
