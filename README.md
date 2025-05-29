@@ -32,7 +32,7 @@
 
    ![Video URL Input](Assets/url.png)
 
-3. **Click on "Fetch Formats"** to list the available video/audio formats.
+3. **Click on "Fetch Formats"** to list the available video/audio formats along with Examples & Guide to Download your Videos efficiently.
 
    ![Fetch Formats Button](Assets/fetch.png)
 
