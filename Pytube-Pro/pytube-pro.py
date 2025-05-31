@@ -5,9 +5,9 @@ from tkinter import scrolledtext, messagebox, ttk
 import threading
 
 def money_ape():
-    print("\033[1;93m __  __                                _          \033[0m")
-    print("\033[1;93m|  \\/  | ___  _ __   ___ _   _        / \\   _ __   ___ \033[0m")
-    print("\033[1;93m| |\\/| |/ _ \\| '_ \\ / _ \\ | | |_____ / _ \\ | '_ \\ / _ \\\033[0m")
+    print("\033[1;93m                                   _          \033[0m")
+    print("\033[1;93m|  \\/  | ___   _   ___            / \\   _   ___ \033[0m")
+    print("\033[1;93m| |\\/| |/  \\| ' \\ /  \\ | | |____ /  \\ | ' \\ / _ \\\033[0m")
     print("\033[1;93m| |  | | (_) | | | |  __/ |_| |_____/ ___ \\| |_) |  __/\033[0m")
     print("\033[1;93m|_|  |_|\\___/|_| |_|\\___|\\__, |    /_/   \\_\\ .__/ \\___|\033[0m")
     print("\033[1;93m                         |___/             |_|\033[0m")
@@ -60,7 +60,7 @@ def OS_platform_verify():
                 print(f"{module_name}.......Error")
                 print(f"{module_name} is not installed.\nInstalling...")
                 try:
-                    cmd.run(["cmd", "/c", "pip3", "install", module_name, "--quiet"])
+                    cmd.run(["pip3", "install", module_name, "--quiet"])
                     print(f"{module_name} installed successfully.\n")
                 except cmd.CalledProcessError:
                     print(f"Failed to install {module_name}.\n")
@@ -91,15 +91,54 @@ def video_formats(url):
             info = ydl.extract_info(url, download=False)
             formats = info.get('formats', [])
 
-        formats_dict = {}
+        # Get ALL available formats with simplified details
+        all_formats = []
+        
         for fmt in formats:
+            height = fmt.get('height')
+            width = fmt.get('width')
             format_id = fmt['format_id']
             filesize = fmt.get('filesize_approx', fmt.get('filesize'))
-            formats_dict[format_id] = {
-                'Resolution': fmt.get('resolution'),
-                'Filesize': format_file_size(filesize)
+            vcodec = fmt.get('vcodec', 'none')
+            acodec = fmt.get('acodec', 'none')
+            ext = fmt.get('ext', 'unknown')
+            
+            # Create format info with simplified display
+            format_info = {
+                'format_id': format_id,
+                'height': height or 0,
+                'width': width or 0,
+                'filesize': format_file_size(filesize),
+                'ext': ext.upper(),
+                'has_video': vcodec != 'none',
+                'has_audio': acodec != 'none',
+                'vcodec': vcodec,
+                'acodec': acodec
             }
-        return formats_dict, info.get('title', 'Unknown Title')
+            
+            # Create simplified display name (only quality, size, extension)
+            if height and vcodec != 'none':
+                if acodec != 'none':
+                    display_name = f"{height}p {ext.upper()}"
+                else:
+                    display_name = f"{height}p {ext.upper()}\n(Video Only)"
+            elif acodec != 'none' and vcodec == 'none':
+                display_name = f"Audio Only\n{ext.upper()}"
+            else:
+                display_name = f"Format {format_id}\n{ext.upper()}"
+            
+            format_info['display_name'] = display_name
+            all_formats.append(format_info)
+        
+        # Sort formats: Video formats by resolution (desc), then audio formats
+        video_formats = [f for f in all_formats if f['has_video']]
+        audio_formats = [f for f in all_formats if not f['has_video'] and f['has_audio']]
+        
+        video_formats.sort(key=lambda x: x['height'], reverse=True)
+        
+        sorted_formats = video_formats + audio_formats
+        
+        return sorted_formats, info.get('title', 'Unknown Title')
     except Exception as e:
         print(f"An error occurred: {e}")
         return None, None
@@ -107,8 +146,8 @@ def video_formats(url):
 class Tubit:
     def __init__(self, root):
         self.root = root
-        self.root.title("Money-Ape : Pytube")
-        self.root.geometry("1400x900")
+        self.root.title("Money-Ape : Enhanced Pytube")
+        self.root.geometry("1600x1000")
         self.root.configure(bg='#1a1a1a')
         self.root.resizable(True, True)
         
@@ -124,19 +163,23 @@ class Tubit:
         self.text_color = '#f0f6fc'
         self.muted_text = '#8b949e'
         self.border_color = '#30363d'
+        self.selected_color = '#fd7e14'  # Orange for selected items
         
         # Download progress variables
         self.video_title = ""
         self.download_progress = 0
+        self.selected_format = None
+        self.all_formats = []
+        self.format_buttons = []
         
         self.setup_ui()
         
     def setup_ui(self):
-        # Main container with reduced padding
+        # Main container
         main_container = tk.Frame(self.root, bg=self.bg_color)
         main_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
         
-        # Header with reduced padding
+        # Header
         header_frame = tk.Frame(main_container, bg=self.bg_color)
         header_frame.pack(fill=tk.X, pady=(0, 20))
         
@@ -144,25 +187,25 @@ class Tubit:
         title_frame = tk.Frame(header_frame, bg=self.bg_color)
         title_frame.pack()
         
-        title_label = tk.Label(title_frame, text="Tubit", 
-                             font=('Arial', 28, 'bold'), 
+        title_label = tk.Label(title_frame, text="Enhanced Tubit",
+                             font=('Arial', 28, 'bold'),
                              bg=self.bg_color, fg=self.text_color)
         title_label.pack(side=tk.LEFT)
         
-        subtitle_label = tk.Label(header_frame, text="Download YouTube videos in your preferred quality", 
-                                font=('Arial', 12), 
+        subtitle_label = tk.Label(header_frame, text="Download YouTube videos - All available formats displayed",
+                                font=('Arial', 12),
                                 bg=self.bg_color, fg=self.muted_text)
         subtitle_label.pack(pady=(5, 0))
         
-        # URL Input Section with reduced padding
+        # URL Input Section
         url_frame = tk.Frame(main_container, bg=self.card_color, relief=tk.FLAT, highlightbackground=self.border_color, highlightthickness=1)
         url_frame.pack(fill=tk.X, pady=(0, 15))
         
         url_inner = tk.Frame(url_frame, bg=self.card_color)
         url_inner.pack(fill=tk.X, padx=20, pady=20)
         
-        url_label = tk.Label(url_inner, text="YouTube URL", 
-                           font=('Arial', 12, 'bold'), 
+        url_label = tk.Label(url_inner, text="YouTube URL",
+                           font=('Arial', 12, 'bold'),
                            bg=self.card_color, fg=self.text_color)
         url_label.pack(anchor=tk.W, pady=(0, 8))
         
@@ -170,8 +213,8 @@ class Tubit:
         url_input_frame = tk.Frame(url_inner, bg=self.card_color)
         url_input_frame.pack(fill=tk.X, pady=(0, 15))
         
-        self.url_entry = tk.Entry(url_input_frame, font=('Arial', 12), 
-                                bg=self.input_bg, fg=self.text_color, 
+        self.url_entry = tk.Entry(url_input_frame, font=('Arial', 12),
+                                bg=self.input_bg, fg=self.text_color,
                                 insertbackground=self.text_color,
                                 relief=tk.FLAT, bd=0, justify='center',
                                 highlightbackground=self.border_color, highlightthickness=1)
@@ -181,135 +224,108 @@ class Tubit:
         button_frame = tk.Frame(url_inner, bg=self.card_color)
         button_frame.pack()
         
-        self.fetch_button = tk.Button(button_frame, text="Fetch Formats", 
+        self.fetch_button = tk.Button(button_frame, text="Fetch All Available Formats",
                                     command=self.fetch_formats_threaded,
-                                    bg=self.accent_color, fg='white', 
+                                    bg=self.accent_color, fg='white',
                                     font=('Arial', 12, 'bold'),
                                     relief=tk.FLAT, bd=0, cursor='hand2',
                                     activebackground='#2ea043', padx=25, pady=10)
         self.fetch_button.pack()
         
-        # Two-column content area 
-        content_frame = tk.Frame(main_container, bg=self.card_color, highlightbackground=self.border_color, highlightthickness=1)
-        content_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+        # Quality Selection Section - Grid Layout (NO HORIZONTAL SCROLLBAR)
+        quality_frame = tk.Frame(main_container, bg=self.card_color, highlightbackground=self.border_color, highlightthickness=1)
+        quality_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
         
-        # Two-column layout
-        two_col_frame = tk.Frame(content_frame, bg=self.card_color)
-        two_col_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        quality_inner = tk.Frame(quality_frame, bg=self.card_color)
+        quality_inner.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
-        # Left column - Examples & Guide
-        left_frame = tk.Frame(two_col_frame, bg=self.card_color)
-        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        quality_header = tk.Label(quality_inner, text="All Available Video Formats",
+                                font=('Arial', 16, 'bold'),
+                                bg=self.card_color, fg=self.text_color)
+        quality_header.pack(pady=(0, 15))
         
-        left_header = tk.Label(left_frame, text="Examples & Guide", 
-                             font=('Arial', 12, 'bold'), 
-                             bg=self.card_color, fg=self.text_color)
-        left_header.pack(anchor=tk.W, pady=(0, 8))
+        # Instructions
+        instructions = tk.Label(quality_inner, text="Click 'Fetch All Available Formats' to see all downloadable options for this video",
+                              font=('Arial', 11),
+                              bg=self.card_color, fg=self.muted_text)
+        instructions.pack(pady=(0, 20))
         
-        self.formats_text = scrolledtext.ScrolledText(left_frame, wrap=tk.WORD, 
-                                                    width=50, height=20,
-                                                    bg='#0d1117', fg=self.text_color,
-                                                    font=('Consolas', 10),
-                                                    relief=tk.FLAT, bd=0,
-                                                    insertbackground=self.text_color,
-                                                    selectbackground=self.accent_color,
-                                                    selectforeground='white')
-        self.formats_text.pack(fill=tk.BOTH, expand=True)
+        # Create main scrollable area for grid layout (ONLY VERTICAL SCROLL)
+        canvas = tk.Canvas(quality_inner, bg=self.card_color, highlightthickness=0)
+        scrollbar_y = ttk.Scrollbar(quality_inner, orient="vertical", command=canvas.yview)
         
-        # Right column - Format Details
-        right_frame = tk.Frame(two_col_frame, bg=self.card_color)
-        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        self.scrollable_frame = tk.Frame(canvas, bg=self.card_color)
         
-        right_header = tk.Label(right_frame, text="Format Details", 
-                              font=('Arial', 12, 'bold'), 
-                              bg=self.card_color, fg=self.text_color)
-        right_header.pack(anchor=tk.W, pady=(0, 8))
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
         
-        self.text_area = scrolledtext.ScrolledText(right_frame, wrap=tk.WORD, 
-                                                 width=50, height=20,
-                                                 bg='#0d1117', fg=self.text_color,
-                                                 font=('Consolas', 10),
-                                                 relief=tk.FLAT, bd=0,
-                                                 insertbackground=self.text_color,
-                                                 selectbackground=self.accent_color,
-                                                 selectforeground='white')
-        self.text_area.pack(fill=tk.BOTH, expand=True)
+        canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar_y.set)
         
-        # Set initial example text
-        self.set_initial_example_text()
+        # Pack scrollbar and canvas (NO HORIZONTAL SCROLLBAR)
+        scrollbar_y.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
         
-        # Bottom section - FIXED LAYOUT: Video Title LEFT, Download Controls RIGHT
+        # Bottom section - Video Title and Download Controls
         bottom_frame = tk.Frame(main_container, bg=self.card_color, highlightbackground=self.border_color, highlightthickness=1)
         bottom_frame.pack(fill=tk.X)
         
         bottom_inner = tk.Frame(bottom_frame, bg=self.card_color)
-        bottom_inner.pack(fill=tk.X, padx=20, pady=15)  # Reduced padding
+        bottom_inner.pack(fill=tk.X, padx=20, pady=15)
         
-        # HORIZONTAL LAYOUT: Video Title (LEFT) + Download Controls (RIGHT)
-        main_bottom_frame = tk.Frame(bottom_inner, bg=self.card_color)
-        main_bottom_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        # LEFT SIDE - Video Title Section
-        video_title_section = tk.Frame(main_bottom_frame, bg=self.card_color)
-        video_title_section.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 20))
-        
-        video_title_label = tk.Label(video_title_section, text="Video Title:", 
-                                   font=('Arial', 12, 'bold'), 
+        # Video Title Section
+        video_title_label = tk.Label(bottom_inner, text="Video Title:",
+                                   font=('Arial', 12, 'bold'),
                                    bg=self.card_color, fg=self.text_color)
         video_title_label.pack(anchor=tk.W, pady=(0, 5))
         
         # Video title display with background
-        video_title_container = tk.Frame(video_title_section, bg=self.input_bg, highlightbackground=self.border_color, highlightthickness=1)
-        video_title_container.pack(fill=tk.X)
+        video_title_container = tk.Frame(bottom_inner, bg=self.input_bg, highlightbackground=self.border_color, highlightthickness=1)
+        video_title_container.pack(fill=tk.X, pady=(0, 15))
         
-        self.video_title_display = tk.Label(video_title_container, text="No video selected", 
-                                          font=('Arial', 11), 
+        self.video_title_display = tk.Label(video_title_container, text="No video selected",
+                                          font=('Arial', 11),
                                           bg=self.input_bg, fg=self.muted_text,
                                           wraplength=600, justify=tk.LEFT, anchor='w')
         self.video_title_display.pack(fill=tk.X, padx=15, pady=10)
         
-        # RIGHT SIDE - Download Controls
-        download_controls_section = tk.Frame(main_bottom_frame, bg=self.card_color)
-        download_controls_section.pack(side=tk.RIGHT)
+        # Download Section
+        download_section = tk.Frame(bottom_inner, bg=self.card_color)
+        download_section.pack(fill=tk.X, pady=(0, 15))
         
-        download_header = tk.Label(download_controls_section, text="Download Control", 
-                                 font=('Arial', 12, 'bold'), 
-                                 bg=self.card_color, fg=self.text_color)
-        download_header.pack(anchor=tk.W, pady=(0, 5))
+        # Selected format display
+        selected_format_label = tk.Label(download_section, text="Selected Format:",
+                                        font=('Arial', 12, 'bold'),
+                                        bg=self.card_color, fg=self.text_color)
+        selected_format_label.pack(anchor=tk.W, pady=(0, 5))
         
-        # Download controls in a compact layout
-        controls_container = tk.Frame(download_controls_section, bg=self.card_color)
-        controls_container.pack()
+        self.selected_format_display = tk.Label(download_section, text="No format selected",
+                                               font=('Arial', 11),
+                                               bg=self.card_color, fg=self.muted_text)
+        self.selected_format_display.pack(anchor=tk.W, pady=(0, 15))
         
-        format_label = tk.Label(controls_container, text="Format Code:", 
-                              font=('Arial', 10, 'bold'), 
-                              bg=self.card_color, fg=self.text_color)
-        format_label.pack(anchor=tk.W, pady=(0, 5))
+        # Download button
+        download_button_frame = tk.Frame(download_section, bg=self.card_color)
+        download_button_frame.pack()
         
-        self.format_entry = tk.Entry(controls_container, font=('Arial', 11), 
-                                   bg=self.input_bg, fg=self.text_color,
-                                   insertbackground=self.text_color,
-                                   relief=tk.FLAT, bd=0, justify='center',
-                                   highlightbackground=self.border_color, highlightthickness=1,
-                                   width=15)
-        self.format_entry.pack(ipady=8, pady=(0, 10))
-        
-        self.download_button = tk.Button(controls_container, text="Download Video", 
+        self.download_button = tk.Button(download_button_frame, text="Download Selected Format",
                                        command=self.download_video_threaded,
-                                       bg=self.accent_color, fg='white', 
-                                       font=('Arial', 10, 'bold'),
+                                       bg=self.accent_color, fg='white',
+                                       font=('Arial', 12, 'bold'),
                                        relief=tk.FLAT, bd=0, cursor='hand2',
                                        activebackground='#2ea043',
-                                       padx=15, pady=8, width=15)
+                                       padx=25, pady=10, state='disabled')
         self.download_button.pack()
         
-        # Progress Section (BELOW both sections)
+        # Progress Section
         progress_section = tk.Frame(bottom_inner, bg=self.card_color)
-        progress_section.pack(fill=tk.X, pady=(10, 0))
+        progress_section.pack(fill=tk.X, pady=(15, 0))
         
         # Progress bar section
-        progress_label = tk.Label(progress_section, text="Download Progress:", 
-                                font=('Arial', 11, 'bold'), 
+        progress_label = tk.Label(progress_section, text="Download Progress:",
+                                font=('Arial', 11, 'bold'),
                                 bg=self.card_color, fg=self.text_color)
         progress_label.pack(anchor=tk.W, pady=(0, 5))
         
@@ -318,18 +334,18 @@ class Tubit:
         progress_bar_frame.pack(fill=tk.X, pady=(0, 5))
         
         # Custom progress bar using Canvas
-        self.progress_canvas = tk.Canvas(progress_bar_frame, height=20, bg=self.input_bg, 
+        self.progress_canvas = tk.Canvas(progress_bar_frame, height=20, bg=self.input_bg,
                                        highlightbackground=self.border_color, highlightthickness=1)
         self.progress_canvas.pack(fill=tk.X, side=tk.LEFT, padx=(0, 10))
         
-        self.progress_text = tk.Label(progress_bar_frame, text="0%", 
-                                    font=('Arial', 10, 'bold'), 
+        self.progress_text = tk.Label(progress_bar_frame, text="0%",
+                                    font=('Arial', 10, 'bold'),
                                     bg=self.card_color, fg=self.text_color, width=6)
         self.progress_text.pack(side=tk.RIGHT)
         
         # Status label
-        self.status_label = tk.Label(progress_section, text="Ready to download", 
-                                   font=('Arial', 10), 
+        self.status_label = tk.Label(progress_section, text="Ready to download",
+                                   font=('Arial', 10),
                                    bg=self.card_color, fg=self.muted_text)
         self.status_label.pack(anchor=tk.W)
         
@@ -343,160 +359,152 @@ class Tubit:
             progress_width = (canvas_width - 4) * (percentage / 100)
             
             # Background
-            self.progress_canvas.create_rectangle(2, 2, canvas_width-2, canvas_height-2, 
+            self.progress_canvas.create_rectangle(2, 2, canvas_width-2, canvas_height-2,
                                                 fill=self.input_bg, outline="")
             
             # Progress fill
             if progress_width > 0:
-                self.progress_canvas.create_rectangle(2, 2, progress_width+2, canvas_height-2, 
+                self.progress_canvas.create_rectangle(2, 2, progress_width+2, canvas_height-2,
                                                     fill=self.accent_color, outline="")
             
             # Update percentage text
             self.progress_text.config(text=f"{percentage:.1f}%")
     
-    def set_initial_example_text(self):
-        self.formats_text.config(state=tk.NORMAL)
-        self.formats_text.delete(1.0, tk.END)
+    def create_format_grid(self):
+        """Create format selection buttons in a grid layout with larger boxes"""
+        # Clear existing buttons
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+        self.format_buttons = []
         
-        initial_text = """USAGE GUIDE:
-
-        1. Enter a YouTube URL above
-        2. Click 'Fetch Formats' to get available formats
-        3. Choose a format code from the right panel
-        4. Enter the format code and download
-
-        COMMON FORMAT TYPES:
-        • Video + Audio: 18, 22 (complete files)
-        • Video Only: 133, 134, 135, 136, 137
-        • Audio Only: 140, 249, 250
-
-        QUALITY GUIDE:
-        • 144p: Format code = 160
-        • 240p: Format code = 133  
-        • 360p: Format code = 134
-        • 480p: Format code = 135
-        • 720p: Format code = 136
-        • 1080p: Format code = 137
-
-        COMBINING FORMATS:
-        You can combine video and audio using '+':
-        • Best 1080p: 137+140
-        • Best 720p: 136+140
-        • Best 480p: 135+140
-
-        TIPS:
-        • Higher format numbers = better quality
-        • Larger file sizes for higher quality
-        • Audio-only downloads use less bandwidth
-        • Check file size before downloading
-
-        RECOMMENDED FORMATS:
-        • High Quality: 137+140 (1080p+audio)
-        Under Development might not work.!
-        • Balanced: 136+140 (720p+audio)  
-        • Quick: 22 (720p with audio)
-        • Audio Only: 140 (best audio)
-
-    Enter the format code and click Download!"""
+        if not self.all_formats:
+            no_formats_label = tk.Label(self.scrollable_frame,
+                                      text="No formats available. Please fetch video information first.",
+                                      font=('Arial', 12),
+                                      bg=self.card_color, fg=self.muted_text)
+            no_formats_label.pack(pady=20)
+            return
         
-        self.formats_text.insert(tk.END, initial_text)
-        self.formats_text.config(state=tk.DISABLED)
+        # Calculate grid dimensions - 4 columns for better layout
+        columns = 4
+        
+        # Create grid
+        current_row = 0
+        current_col = 0
+        
+        for i, format_info in enumerate(self.all_formats):
+            # Create button frame
+            button_frame = tk.Frame(self.scrollable_frame, bg=self.card_color)
+            button_frame.grid(row=current_row, column=current_col, padx=8, pady=8, sticky="ew")
+            
+            # Simplified format details for display (only quality, size, extension)
+            display_text = format_info['display_name']
+            if format_info['filesize'] != "Unknown":
+                display_text += f"\n{format_info['filesize']}"
+            
+            # Larger quality button with increased size
+            btn = tk.Button(button_frame, text=display_text,
+                          command=lambda idx=i: self.select_format(idx),
+                          bg=self.input_bg, fg=self.text_color,
+                          font=('Arial', 11, 'bold'),  # Increased font size
+                          relief=tk.FLAT, bd=0, cursor='hand2',
+                          activebackground=self.accent_color,
+                          activeforeground='white',
+                          padx=20, pady=15,  # Increased padding for larger boxes
+                          justify=tk.CENTER,
+                          wraplength=180, width=18, height=4)  # Increased width and height
+            btn.pack(fill=tk.BOTH, expand=True)
+            
+            self.format_buttons.append((btn, i))
+            
+            # Update grid position
+            current_col += 1
+            if current_col >= columns:
+                current_col = 0
+                current_row += 1
+        
+        # Configure grid weights for proper resizing
+        for col in range(columns):
+            self.scrollable_frame.grid_columnconfigure(col, weight=1, uniform="column")
+    
+    def select_format(self, format_index):
+        """Select a format and update UI"""
+        self.selected_format = self.all_formats[format_index]
+        
+        # Update button appearances
+        for btn, idx in self.format_buttons:
+            if idx == format_index:
+                btn.config(bg=self.selected_color, fg='white')
+            else:
+                btn.config(bg=self.input_bg, fg=self.text_color)
+        
+        # Update selected format display
+        display_text = self.selected_format['display_name']
+        if self.selected_format['filesize'] != "Unknown":
+            display_text += f" - {self.selected_format['filesize']}"
+        
+        self.selected_format_display.config(text=display_text, fg=self.text_color)
+        
+        # Enable download button
+        self.download_button.config(state='normal')
     
     def fetch_formats_threaded(self):
         # Disable button and update status
-        self.fetch_button.configure(state='disabled', text='Fetching...')
-        self.status_label.config(text="Fetching video information...")
+        self.fetch_button.configure(state='disabled', text='Fetching All Formats...')
+        self.status_label.config(text="Fetching all available video formats...")
         
         # Run in separate thread to prevent GUI freezing
-        thread = threading.Thread(target=self.display_formats)
+        thread = threading.Thread(target=self.fetch_formats)
         thread.daemon = True
         thread.start()
     
-    def display_formats(self):
+    def fetch_formats(self):
         try:
             url = self.url_entry.get().strip()
             if not url:
                 self.root.after(0, lambda: messagebox.showerror("Error", "Please enter a valid YouTube URL"))
                 return
                 
-            formats_dict, video_title = video_formats(url)
-            if not formats_dict:
+            all_formats, video_title = video_formats(url)
+            if not all_formats:
                 self.root.after(0, lambda: messagebox.showerror("Error", "No formats available or an error occurred."))
                 return
-
+            
             # Update UI in main thread
-            self.root.after(0, lambda: self.update_format_display(formats_dict, url, video_title))
+            self.root.after(0, lambda: self.update_format_display(all_formats, video_title))
             
         except Exception as e:
             error_msg = f"An error occurred: {str(e)}"
             self.root.after(0, lambda: messagebox.showerror("Error", error_msg))
         finally:
             # Re-enable button and update status
-            self.root.after(0, lambda: self.fetch_button.configure(state='normal', text='Fetch Formats'))
+            self.root.after(0, lambda: self.fetch_button.configure(state='normal', text='Fetch All Available Formats'))
             self.root.after(0, lambda: self.status_label.config(text="Ready to download"))
     
-    def update_format_display(self, formats_dict, url, video_title):
-        # Update video title with proper formatting
+    def update_format_display(self, all_formats, video_title):
+        # Update video title
         self.video_title = video_title or "Unknown Title"
         self.video_title_display.config(text=self.video_title, fg=self.text_color)
         
-        # Update format details tab.
-        self.text_area.config(state=tk.NORMAL)
-        self.text_area.delete(1.0, tk.END)
+        # Store all formats
+        self.all_formats = all_formats
         
-        for format_id, format_info in formats_dict.items():
-            self.text_area.insert(tk.END, f"FORMAT ID: {format_id}\n")
-            for key, value in format_info.items():
-                self.text_area.insert(tk.END, f"  {key}: {value}\n")
-            self.text_area.insert(tk.END, "\n")
+        # Create format grid
+        self.create_format_grid()
         
-        self.text_area.config(state=tk.DISABLED)
+        # Reset selection
+        self.selected_format = None
+        self.selected_format_display.config(text="No format selected", fg=self.muted_text)
+        self.download_button.config(state='disabled')
         
-        # Update examples section with specific data
-        self.formats_text.config(state=tk.NORMAL)
-        self.formats_text.delete(1.0, tk.END)
-        
-        example_data = f"""[youtube] Video information fetched!
-
-            AVAILABLE FORMATS SUMMARY:
-            Format  Ext   Resolution  Quality    Size
-            249     webm  audio only  tiny       ~2MB
-            250     webm  audio only  tiny       ~3MB  
-            140     m4a   audio only  medium     ~5MB
-            160     mp4   254x144     144p       ~10MB
-            133     mp4   426x240     240p       ~20MB
-            134     mp4   640x360     360p       ~30MB
-            135     mp4   854x480     480p       ~50MB
-            136     mp4   1280x720    720p       ~80MB
-            137     mp4   1920x1080   1080p      ~150MB
-            18      mp4   640x360     360p+audio ~40MB
-            22      mp4   1280x720    720p+audio ~120MB
-
-            HOW TO USE:
-            1. Pick a format ID from the right panel
-            2. For video+audio combo: use 137+140
-            3. For audio only: use 140
-            4. For quick download: use 18 or 22
-
-            RECOMMENDED COMBINATIONS:
-            • High Quality: 137+140 (1080p+audio)
-            Under Development might not work.!
-            • Balanced: 136+140 (720p+audio)  
-            • Quick: 22 (720p with audio)
-            • Audio Only: 140 (best audio)
-
-            POPULAR FORMATS:
-            • 22: 720p MP4 with audio (recommended)
-            • 18: 360p MP4 with audio (fast download)
-            • 140: Audio only M4A (music/podcasts)
-            • 137: 1080p video only (needs +140 for audio)
-
-        Enter the format code in the bottom section and click Download!"""
-        
-        self.formats_text.insert(tk.END, example_data)
-        self.formats_text.config(state=tk.DISABLED)
+        # Update status with format count
+        self.status_label.config(text=f"Found {len(all_formats)} available formats")
     
     def download_video_threaded(self):
+        if not self.selected_format:
+            messagebox.showerror("Error", "Please select a format first")
+            return
+        
         # Disable button and update status
         self.download_button.configure(state='disabled', text='Downloading...')
         self.status_label.config(text="Starting download...")
@@ -510,23 +518,25 @@ class Tubit:
     def download_video(self):
         try:
             url = self.url_entry.get().strip()
-            format_v = self.format_entry.get().strip()
             
-            if not url or not format_v:
-                self.root.after(0, lambda: messagebox.showerror("Error", "Please enter both URL and format code"))
+            if not url or not self.selected_format:
+                self.root.after(0, lambda: messagebox.showerror("Error", "Please enter URL and select format"))
                 return
             
-            # Simulate progress updates.
+            # Get format ID for selected format
+            format_id = self.selected_format['format_id']
+            
+            # Simulate progress updates
             for i in range(0, 101, 10):
                 self.root.after(0, lambda p=i: self.update_progress_bar(p))
                 self.root.after(0, lambda p=i: self.status_label.config(text=f"Downloading... {p}%"))
                 threading.Event().wait(0.2)  # Simulated delay
             
             if current_os == "Windows":
-                result = cmd.run(["cmd", "/c", "yt-dlp", "-f", f"{format_v}", f"{url}"], 
+                result = cmd.run(["cmd", "/c", "yt-dlp", "-f", f"{format_id}", f"{url}"],
                                capture_output=True, text=True)
             elif current_os == "Linux":
-                result = cmd.run(["yt-dlp", "-f", f"{format_v}", f"{url}"], 
+                result = cmd.run(["yt-dlp", "-f", f"{format_id}", f"{url}"],
                                capture_output=True, text=True)
             else:
                 self.root.after(0, lambda: messagebox.showerror("Error", "Unsupported platform"))
@@ -535,7 +545,10 @@ class Tubit:
             if result.returncode == 0:
                 self.root.after(0, lambda: self.update_progress_bar(100))
                 self.root.after(0, lambda: self.status_label.config(text="Download completed successfully!"))
-                self.root.after(0, lambda: messagebox.showinfo("Success", "Video downloaded successfully!"))
+                self.root.after(0, lambda: messagebox.showinfo("Success", 
+                    f"Video downloaded successfully!\n"
+                    f"Format: {self.selected_format['display_name']}\n"
+                    f"Size: {self.selected_format['filesize']}"))
             else:
                 error_msg = result.stderr if result.stderr else "Download failed"
                 self.root.after(0, lambda: self.status_label.config(text="Download failed"))
@@ -547,7 +560,7 @@ class Tubit:
             self.root.after(0, lambda: messagebox.showerror("Error", error_msg))
         finally:
             # Re-enable button
-            self.root.after(0, lambda: self.download_button.configure(state='normal', text='Download Video'))
+            self.root.after(0, lambda: self.download_button.configure(state='normal', text='Download Selected Format'))
 
 if __name__ == "__main__":
     OS_platform_verify()
