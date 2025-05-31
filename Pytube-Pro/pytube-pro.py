@@ -146,7 +146,7 @@ def video_formats(url):
 class Tubit:
     def __init__(self, root):
         self.root = root
-        self.root.title("Money-Ape : Enhanced Pytube")
+        self.root.title("Money-Ape : Pytube")
         self.root.geometry("1600x1000")
         self.root.configure(bg='#1a1a1a')
         self.root.resizable(True, True)
@@ -187,7 +187,7 @@ class Tubit:
         title_frame = tk.Frame(header_frame, bg=self.bg_color)
         title_frame.pack()
         
-        title_label = tk.Label(title_frame, text="Enhanced Tubit",
+        title_label = tk.Label(title_frame, text="Tubit",
                              font=('Arial', 28, 'bold'),
                              bg=self.bg_color, fg=self.text_color)
         title_label.pack(side=tk.LEFT)
