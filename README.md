@@ -32,11 +32,11 @@
 
    ![Video URL Input](Assets/url.png)
 
-3. **Click on "Fetch Formats"** to list the available video/audio formats along with Examples & Guide to Download your Videos efficiently.
+3. **Click on "Fetch Formats"** to list the available video/audio Quality formats.
 
    ![Fetch Formats Button](Assets/fetch.png)
 
-4. **Choose the desired format**, then click on **Download Video**.
+4. **Choose the desired Quality format**, then click on **Download Video**.
 
    ![Download Video UI](Assets/download.png)
 
